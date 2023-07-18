@@ -2,3 +2,4 @@ openai
 langchain
 pinecone-client
 pymysql
+tiktoken
