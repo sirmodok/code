@@ -4,7 +4,6 @@ from langchain.vectorstores import Chroma
 from langchain.sql_database import SQLDatabase
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import OpenAIEmbeddings
-from pprint import pprint
 
 openai_api_key = os.getenv("OPENAI_API_KEY")
 db_password = os.getenv("DB_PASSWORD")
