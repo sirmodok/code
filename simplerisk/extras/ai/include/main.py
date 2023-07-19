@@ -20,19 +20,21 @@ db_user = "simplerisk"
 db_host = "localhost"
 db_name = "simplerisk"
 
-memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True) # Create a memory object that stores our conversation history
-llm = ChatOpenAI(temperature=0, model="gpt-4") # Create a new instance of the ChatOpenAI object. This is how we interact with OpenAI using a chatbot type format
-sql_db = SQLDatabase.from_uri(f"mysql+pymysql://{db_user}:{sql_db_password}@{db_host}/{db_name}") # Create a langchain owned instance of our database
-text_splitter = TokenTextSplitter(chunk_size = 2048, chunk_overlap = 20) # Creates an instance of a textSplitter object. This is used to attempt to break the text apart by context. This is called chunking
+
 def query_sql_db():
     output = sql_agent_executer.run("SELECT * FROM assets")
     return output
 
+memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True) # Create a memory object that stores our conversation history
+llm = ChatOpenAI(temperature=0, model="gpt-4") # Create a new instance of the ChatOpenAI object. This is how we interact with OpenAI using a chatbot type format
+sql_db = SQLDatabase.from_uri(f"mysql+pymysql://{db_user}:{sql_db_password}@{db_host}/{db_name}") # Create a langchain owned instance of our database
+text_splitter = TokenTextSplitter(chunk_size = 2048, chunk_overlap = 20) # Creates an instance of a textSplitter object. This is used to attempt to break the text apart by context. This is called chunking
+
 sql_toolkit = SQLDatabaseToolkit(db=sql_db, llm=llm) # Create an instance of an sql database toolkit. This allows openai to interact directly with the SQL dataase
 sql_agent_executer = create_sql_agent(llm=llm, toolkit=sql_toolkit, verbose=True) # Create an agent executer object that uses our Sql toolkit
-tools = load_tools(["terminal"])
-tools.append(Tool.from_function(func=query_sql_db, name="sql_run", description="run a query on an sql db"))
-agent_chain = initialize_agent(tools=tools, llm=llm, agent=AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION, verbose=True, memory=memory)
+tools = load_tools(["terminal"]) # Load up any built in tools needed for the agent
+tools.append(Tool.from_function(func=query_sql_db, name="sql_run", description="run a query on an sql db")) # Add the custom tool that uses the executer we defined earlier. 
+agent_chain = initialize_agent(tools=tools, llm=llm, agent=AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION, verbose=True, memory=memory) # Create an agent object that uses all of our previously defined objects. 
 
 full_list = [] # I just needed a list object here to use for the SQL information
 tables = sql_db.get_usable_table_names() # Get a list of table names from our SQL database
