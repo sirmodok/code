@@ -33,8 +33,8 @@ class SimpleAgent:
         self.text_splitter = TokenTextSplitter(chunk_size = 2048, chunk_overlap = 20) # Creates an instance of a textSplitter object. This is used to attempt to break the text apart by context. This is called chunking
         self.agent_chain = initialize_agent(tools=self.tools, llm=self.llm, agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True, memory=self.memory) # Create an agent object that uses all of our previously defined objects.
 
-    def query_sql_db(sql_agent_executer):
-        output = sql_agent_executer.run("SELECT * FROM assets")
+    def query_sql_db(self):
+        output = self.sql_agent_executer.run()
         return output
 
 
