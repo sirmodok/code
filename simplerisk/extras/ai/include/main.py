@@ -1,13 +1,12 @@
 import os
-from langchain.agents import AgentType, create_sql_agent, initialize_agent, load_tools
+from langchain.agents import OpenAIFunctionsAgent, tool
+from langchain.agents import load_tools
 from langchain.memory import ConversationBufferMemory
-from langchain.agents.agent_toolkits import SQLDatabaseToolkit
 from langchain.chat_models import ChatOpenAI
-from langchain.vectorstores import Chroma
 from langchain.sql_database import SQLDatabase
-from langchain.text_splitter import TokenTextSplitter
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.tools import StructuredTool
+from langchain.agents import AgentExecutor
+from langchain.schema import SystemMessage
+
 
 
 openai_api_key = os.getenv("OPENAI_API_KEY") # Get the openai api key from the OS. Store your openai api key in OPENAI_API_KEY
@@ -23,26 +22,28 @@ db_name = "simplerisk"
 class SimpleAgent:
     def __init__(self):
         self.sql_db = SQLDatabase.from_uri(f"mysql+pymysql://{db_user}:{sql_db_password}@{db_host}/{db_name}") # Create a langchain owned object of our database
-        self.llm = ChatOpenAI(temperature=0, model="gpt-4") # Create a new instance of the ChatOpenAI object. This is how we interact with OpenAI using a chatbot type format
-        self.sql_toolkit = SQLDatabaseToolkit(db=self.sql_db, llm=self.llm) # Create an instance of an sql database toolkit. This allows openai to interact directly with the SQL dataase
-        self.memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True) # Create a memory object that stores our conversation history
-        self.tools = load_tools(["terminal"]) # Load up any built in tools needed for the agent
-        self.tools.append(StructuredTool.from_function(func=self.query_sql_db, name="sql_run", description="run a query on an sql db")) # Add the custom tool that uses the executer we defined earlier.
-        self.sql_agent_executer = create_sql_agent(llm=self.llm, toolkit=self.sql_toolkit, verbose=True) # Create an agent executer object that uses our Sql toolkit
-        self.embeddings = OpenAIEmbeddings(model="text-embedding-ada-002") # Creates an instance of the OpenAIEmbeddings object. This object converts large amounts of data to a vector store for easy relationshiping of data
-        self.text_splitter = TokenTextSplitter(chunk_size = 2048, chunk_overlap = 20) # Creates an instance of a textSplitter object. This is used to attempt to break the text apart by context. This is called chunking
-        self.agent_chain = initialize_agent(tools=self.tools, llm=self.llm, agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION, verbose=True, memory=self.memory) # Create an agent object that uses all of our previously defined objects.
+        memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True) # Create a memory object that stores our conversation history
 
-    def query_sql_db(self):
-        output = self.sql_agent_executer.run()
-        return output
+        # This is a tool created to work with an sql database
+        @tool
+        def get_sql(query):
+            """Runs a query against an sql database"""
+            result = self.sql_db.run(query)
+            return result
+
+        tools = load_tools(["terminal"]) # Load up any built in tools needed for the agent
+        tools.append(get_sql) # Appends our sql_query tool
+        system_message = SystemMessage(content="You are an assistant that helps with the SimpleRisk application. SimpleRisk is designed to help people maintain security risks in their environment. You will mainly be communicating with an sql database with the schema of 'simplerisk'")
+        prompt = OpenAIFunctionsAgent.create_prompt(system_message=system_message)
+        main_agent = OpenAIFunctionsAgent(llm=ChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613"), tools=tools, prompt=prompt)
+        self.main_agent_executor = AgentExecutor(agent=main_agent, tools=tools, verbose=True, memory=memory)
 
 
 if __name__ == "__main__":
     print("start")
     the_agent = SimpleAgent()
     print("agent created")
-    the_agent.agent_chain("sql query to list all tables")
+    the_agent.main_agent_executor.run("How many tables are in the simplerisk database")
 
 
 
