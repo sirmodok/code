@@ -15,7 +15,7 @@ from langchain.agents import ZeroShotAgent
 
 text_splitter = RecursiveCharacterTextSplitter(
     # Set a really small chunk size, just to show.
-    chunk_size = 4097,
+    chunk_size = 5097,
     chunk_overlap  = 20,
     length_function = len,
     add_start_index = True,
@@ -54,9 +54,9 @@ class SimpleAgent:
 
 
 if __name__ == "__main__":
-    print("start")
+    print("start 📼")
     the_agent = SimpleAgent()
-    print("agent created")
+    print("agent created 🕵️‍♀️")
     while True:
         user_input = input("Enter question: ")
         answer = the_agent.agent.run(input=user_input)
