@@ -9,21 +9,13 @@ from langchain.agents import AgentType
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
-from langchain.prompts import StringPromptTemplate
 
-from langchain.agents import ZeroShotAgent
-
-text_splitter = RecursiveCharacterTextSplitter(
-    # Set a really small chunk size, just to show.
-    chunk_size = 5097,
-    chunk_overlap  = 20,
-    length_function = len,
-    add_start_index = True,
-)
-embeddings = OpenAIEmbeddings()
-vectorstore = Chroma()
 openai_api_key = os.getenv("OPENAI_API_KEY") # Get the openai api key from the OS. Store your openai api key in OPENAI_API_KEY
 sql_db_password = os.getenv("SQL_DB_PASSWORD") # Get the SQL database password. Store the database password in SQL_DB_PASSWORD
+
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=12000, chunk_overlap=20, length_function=len, add_start_index=True)
+embeddings = OpenAIEmbeddings(show_progress_bar=True)
+vectorstore = Chroma(persist_directory='./.chroma')
 memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True) # Create a memory object that stores our conversation history
 
 #Basic information about the simplrisk database we are querying 
@@ -49,16 +41,17 @@ class SimpleAgent:
         self.sql_db = SQLDatabase.from_uri(f"mysql+pymysql://{db_user}:{sql_db_password}@{db_host}/{db_name}") # Create a langchain owned object of our database
         tools = load_tools([]) # Load up any built in tools needed for the agent
         tools.append(get_sql)
-        llm = ChatOpenAI(temperature=0, model="gpt-4")
+        llm = ChatOpenAI(temperature=0.9, model="gpt-3.5-turbo-16k-0613")
         self.agent = initialize_agent(llm=llm, tools=tools, verbose=True, agent=AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION, memory=memory)
 
 
 if __name__ == "__main__":
     print("start 📼")
     the_agent = SimpleAgent()
+    the_agent.agent.run("remember the database name simplerisk")
     print("agent created 🕵️‍♀️")
     while True:
         user_input = input("Enter question: ")
         answer = the_agent.agent.run(input=user_input)
-        print("\n\n\n\n")
+        print("\n#-#-#-#-#-#\n")
         print(answer)
