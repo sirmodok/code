@@ -1,57 +1,24 @@
+
+from flask import Flask, request, render_template
+from flaskwebgui import FlaskUI
+import simple
 import os
-from langchain.agents import initialize_agent
-from langchain.agents import tool
-from langchain.agents import load_tools
-from langchain.memory import ConversationBufferMemory
-from langchain.chat_models import ChatOpenAI
-from langchain.sql_database import SQLDatabase
-from langchain.agents import AgentType
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import Chroma
-
-openai_api_key = os.getenv("OPENAI_API_KEY") # Get the openai api key from the OS. Store your openai api key in OPENAI_API_KEY
-sql_db_password = os.getenv("SQL_DB_PASSWORD") # Get the SQL database password. Store the database password in SQL_DB_PASSWORD
-
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=12000, chunk_overlap=20, length_function=len, add_start_index=True)
-embeddings = OpenAIEmbeddings(show_progress_bar=True)
-vectorstore = Chroma(persist_directory='./.chroma')
-memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True) # Create a memory object that stores our conversation history
-
-#Basic information about the simplrisk database we are querying 
-db_user = "simplerisk"
-db_host = "localhost"
-db_name = "simplerisk"
-
-class SimpleAgent:
-    def __init__(self):
-
-        @tool
-        def get_sql(query):
-            """Runs a query against an sql database"""
-            try:
-                result = self.sql_db.run(query)
-                splitsy = text_splitter.split_text(result)
-                db = vectorstore.from_texts(splitsy, embedding=embeddings)
-                final = db.similarity_search(query=query)
-            except:
-                final = "There was an error retrieving SQL information"
-            return final
-        
-        self.sql_db = SQLDatabase.from_uri(f"mysql+pymysql://{db_user}:{sql_db_password}@{db_host}/{db_name}") # Create a langchain owned object of our database
-        tools = load_tools([]) # Load up any built in tools needed for the agent
-        tools.append(get_sql)
-        llm = ChatOpenAI(temperature=0.9, model="gpt-3.5-turbo-16k-0613")
-        self.agent = initialize_agent(llm=llm, tools=tools, verbose=True, agent=AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION, memory=memory)
 
 
-if __name__ == "__main__":
-    print("start 📼")
-    the_agent = SimpleAgent()
-    the_agent.agent.run("remember the database name simplerisk")
-    print("agent created 🕵️‍♀️")
-    while True:
-        user_input = input("Enter question: ")
-        answer = the_agent.agent.run(input=user_input)
-        print("\n#-#-#-#-#-#\n")
-        print(answer)
+browser_path = "/snap/bin/chromium"
+app = Flask(__name__)
+ui = FlaskUI(app=app, port=5000, server="flask", width=400, height=900, browser_path=browser_path) 
+bot = simple.SimpleBot()
+
+@app.route("/", methods=["GET", "POST"])
+def index():
+    if request.method == "POST":
+        prompt =  request.form["prompt"]
+        airesponse = bot.simplebot.run(prompt)
+        return {"airesponse": airesponse}
+    return render_template("index.html")
+
+if __name__ == '__main__':
+    print("""STARTING""")
+    ui.run()
+
