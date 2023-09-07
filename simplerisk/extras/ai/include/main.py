@@ -1,24 +1,46 @@
-
+# Import necessary modules from flask and flaskwebgui
 from flask import Flask, request, render_template
 from flaskwebgui import FlaskUI
-import simple
-import os
+# Import the SimpleBot class from the testing1classfile module
+import testing1classfile
 
+# Define a class WebApp
+class WebApp:
+    # Initialize the web app
+    def __init__(self):
+        # Define the path to the browser executable
+        self.browser_path = "/snap/bin/chromium"
+        # Initialize a Flask app
+        self.app = Flask(__name__)
+        # Initialize a FlaskUI instance with the Flask app, port number, server type, window dimensions, and browser path
+        self.ui = FlaskUI(app=self.app, port=5000, server="flask", width=800, height=900, browser_path=self.browser_path) 
+        # Initialize a SimpleBot instance
+        self.bot = testing1classfile.SimpleBot()
+        # Define the route for the index page
+        self.app.route("/", methods=["GET", "POST"])(self.index)
 
-browser_path = "/snap/bin/chromium"
-app = Flask(__name__)
-ui = FlaskUI(app=app, port=5000, server="flask", width=400, height=900, browser_path=browser_path) 
-bot = simple.SimpleBot()
+    # Define the function to be called when the index page is accessed
+    def index(self):
+        # If the request method is POST
+        if request.method == "POST":
+            # Get the prompt from the form data
+            prompt =  request.form["prompt"]
+            # Get the AI's response to the prompt
+            airesponse = self.bot.agent.run(prompt)
+            # Return the AI's response as a dictionary
+            return {"airesponse": airesponse}
+        # If the request method is GET, render the index page
+        return render_template("index.html")
 
-@app.route("/", methods=["GET", "POST"])
-def index():
-    if request.method == "POST":
-        prompt =  request.form["prompt"]
-        airesponse = bot.simplebot.run(prompt)
-        return {"airesponse": airesponse}
-    return render_template("index.html")
+    # Define the function to run the web app
+    def run(self):
+        print("STARTING")
+        # Run the FlaskUI instance
+        self.ui.run()
 
+# If this script is run directly (not imported as a module)
 if __name__ == '__main__':
-    print("""STARTING""")
-    ui.run()
-
+    # Initialize a WebApp instance
+    web_app = WebApp()
+    # Run the WebApp instance
+    web_app.run()

@@ -1,74 +1,57 @@
 import os
-from time import sleep
-from langchain.agents import initialize_agent, create_sql_agent
-from langchain.agents import tool
-from langchain.agents import load_tools
-from langchain.memory import ConversationBufferMemory
+from langchain.agents import initialize_agent, load_tools, AgentType
 from langchain.chat_models import ChatOpenAI
 from langchain.sql_database import SQLDatabase
+from langchain.memory import ConversationBufferMemory
 from langchain.agents.agent_toolkits import SQLDatabaseToolkit
-from langchain.agents import AgentType
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import Chroma
+from langchain.prompts import MessagesPlaceholder
+from langchain.schema import SystemMessage
 
-openai_api_key = os.getenv("OPENAI_API_KEY") # Get the openai api key from the OS. Store your openai api key in OPENAI_API_KEY
-sql_db_password = os.getenv("SQL_DB_PASSWORD") # Get the SQL database password. Store the database password in SQL_DB_PASSWORD
-text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=12000, chunk_overlap=20, add_start_index=True)
-embeddings = OpenAIEmbeddings(show_progress_bar=True)
-vectorstore = Chroma(persist_directory='./.chroma', embedding_function=embeddings)
-memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True) # Create a memory object that stores our conversation history
-llm = ChatOpenAI(temperature=0.9, model="gpt-3.5-turbo-16k-0613", tiktoken_model_name="cl100k_base")
-
-#Basic information about the simplrisk database we are querying 
-db_user = "simplerisk"
-db_host = "localhost"
-db_name = "simplerisk"
-sql_db = SQLDatabase.from_uri(f"mysql+pymysql://{db_user}:{sql_db_password}@{db_host}/{db_name}")
-tools = load_tools(["terminal"]) # Load up any built in tools needed for the agent
-
-
-toolkit = SQLDatabaseToolkit(db=sql_db, llm=llm)
-
+# Define a class SimpleBot
 class SimpleBot():
-    openai_api_key = os.getenv("OPENAI_API_KEY") # Get the openai api key from the OS. Store your openai api key in OPENAI_API_KEY
-    sql_db_password = os.getenv("SQL_DB_PASSWORD") # Get the SQL database password. Store the database password in SQL_DB_PASSWORD
-    text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=12000, chunk_overlap=20, add_start_index=True)
-    embeddings = OpenAIEmbeddings(show_progress_bar=True)
-    vectorstore = Chroma(persist_directory='./.chroma', embedding_function=embeddings)
-    memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True) # Create a memory object that stores our conversation history
-    llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613", tiktoken_model_name="cl100k_base")
-    #Basic information about the simplrisk database we are querying 
-    db_user = "simplerisk"
-    db_host = "localhost"
-    db_name = "simplerisk"
-    sql_db = SQLDatabase.from_uri(f"mysql+pymysql://{db_user}:{sql_db_password}@{db_host}/{db_name}")
-    tools = load_tools(["terminal"]) # Load up any built in tools needed for the agent
-    toolkit = SQLDatabaseToolkit(db=sql_db, llm=llm)
-    simplebot = create_sql_agent(llm=ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613"), toolkit=toolkit, verbose=True, agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION)
+    # Initialize the bot
+    def __init__(self):
+        # Get environment variables for OpenAI API key and SQL DB password
+        self.openai_api_key = os.getenv("OPENAI_API_KEY") 
+        self.sql_db_password = os.getenv("SQL_DB_PASSWORD")
+        
+        # Define database user, host, and name
+        self.db_user = "simplerisk"
+        self.db_host = "localhost"
+        self.db_name = "simplerisk"
+        
+        # Initialize SQL database
+        self.sql_db = self.initialize_sql_db()
+        
+        # Initialize toolkit with SQL database and OpenAI chat model
+        self.toolkit = SQLDatabaseToolkit(db=self.sql_db, llm=ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613", verbose=True))
+        
+        # Get tools from toolkit and extend with additional tools
+        self.tools = self.toolkit.get_tools()
+        self.tools.extend(load_tools(["serpapi", "terminal", "human"]))
+        
+        # Initialize agent
+        self.initialize_agent()
 
-# @tool
-# def get_sql(query):
-#     """Runs a query against an sql database"""
-#     agent_executor = create_sql_agent(llm=ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613"), toolkit=toolkit, verbose=True, agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION)
-#     result = agent_executor.run(query)
-#     # splitsy = text_splitter.split_text(result)
-#     # db = vectorstore.from_texts(splitsy, embedding=embeddings)
-#     # final = db.similarity_search(query=query, k=5)
+    # Function to initialize SQL database
+    def initialize_sql_db(self):
+        try:
+            # Return SQL database object
+            return SQLDatabase.from_uri(f"mysql+pymysql://{self.db_user}:{self.sql_db_password}@{self.db_host}/{self.db_name}")
+        except Exception as e:
+            print(f"Failed to initialize SQL Database: {e}")
+            return None
 
-#     return result
-
-def index_db():
-    for i in sql_db.get_usable_table_names():
-        print(i)
-        sql_data = sql_db.run_no_throw(f"SELECT * FROM {i}")
-        splitsy = text_splitter.split_text(sql_data)
-
-        if splitsy:
-            vectorstore.from_texts(splitsy, embedding=embeddings)
-            sleep(2)
-
-    return
-
-
-
+    # Function to initialize agent
+    def initialize_agent(self):
+        # Define content for system message
+        content = "You are in charge of a database named simplerisk that contains an enterprise companies risk data. "
+        
+        # Define arguments for agent initialization
+        agent_kwargs = {"extra_prompt_messages": [MessagesPlaceholder(variable_name="memory")], "system_message": SystemMessage(content=content)}
+        
+        # Define memory for conversation
+        memory = ConversationBufferMemory(memory_key="memory", return_messages=True)
+        
+        # Initialize agent with tools, OpenAI chat model, agent type, verbosity, agent arguments, and memory
+        self.agent = initialize_agent(self.tools, llm=ChatOpenAI(temperature=0.5, model="gpt-3.5-turbo-16k-0613", verbose=True), agent=AgentType.OPENAI_FUNCTIONS, verbose=True, agent_kwargs=agent_kwargs, memory=memory)
