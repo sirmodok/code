@@ -13,7 +13,7 @@ class WebApp:
         # Initialize a Flask app
         self.app = Flask(__name__)
         # Initialize a FlaskUI instance with the Flask app, port number, server type, window dimensions, and browser path
-        self.ui = FlaskUI(app=self.app, port=5000, server="flask", width=400, height=900, browser_path=self.browser_path) 
+        self.ui = FlaskUI(app=self.app, port=5000, server="flask", width=800, height=900, browser_path=self.browser_path) 
         # Initialize a SimpleBot instance
         self.bot = testing1classfile.SimpleBot()
         # Define the route for the index page
