@@ -39,6 +39,7 @@ function available_extras()
         array("short_name" => "ucf", "long_name" => "Unified Compliance Framework (UCF) Extra"),
         array("short_name" => "upgrade", "long_name" => "Upgrade Extra"),
 	    array("short_name" => "vulnmgmt", "long_name" => "Vulnerability Management Extra"),
+        array("short_name" => "ai", "long_name" => "Artifical Intelligence"),
     );
 
     // Return the array of available Extras
