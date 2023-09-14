@@ -20,7 +20,7 @@ class SimpleBot():
         self.db_host = "localhost"
         self.db_name = "simplerisk"
         
-        # Initialize SQL database
+        # Initialize SQL database object
         self.sql_db = self.initialize_sql_db()
         
         # Initialize toolkit with SQL database and OpenAI chat model

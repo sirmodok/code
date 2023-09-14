@@ -11,7 +11,7 @@
 </head>
 <body>
 <pre id="title">
-<h1>SimpleChat</h1><h3>version 0.05 - 2023</h3>                               
+<h1>SimpleChat</h1><h3>version 0.15 - 2023</h3>                               
 </pre>
 <form id="command-form">
     <input type="text" name="prompt" placeholder="⌨️">
@@ -19,14 +19,18 @@
 <br>
     <h2>Response</h2>
     <pre id="airesponse"></pre>
+<br>
+    <h2>History</h2>
+    <pre id="history"></pre>
 </form>
-<div id="static-loading" style="display: block; position: fixed; bottom: 5px; right: 5px;"><img src="static/images/loading7-1.gif" height="100" width="100"></div>
-<div id="loading" style="display: none; position: fixed; bottom: 5px; right: 5px;"><img src="static/images/loading7.gif" height="100" width="100"></div>
+<div id="static-loading" style="display: block; position: fixed; bottom: 5px; right: 5px;"><img src="static/images/noload.gif" height="100" width="100"></div>
+<div id="loading" style="display: none; position: fixed; bottom: 5px; right: 5px;"><img src="static/images/loading9.gif" height="100" width="100"></div>
 <script>
     const commandForm = document.getElementById("command-form");
     const airesponseElement = document.getElementById("airesponse");
     const loadingElement = document.getElementById("loading");  // get the loading element
     const staticLoader = document.getElementById("static-loading");
+    const historyElement = document.getElementById("history")
 
 
     commandForm.addEventListener("submit", async (event) => {
@@ -38,6 +42,10 @@
         const result = await response.json();
         airesponseElement.textContent = result.airesponse;
         loadingElement.style.display = "none";  // hide the loading element
+        // Get user input
+        let userInput = formData.get('prompt');
+        // Append user input and AI response to the history
+        historyElement.innerHTML += `<div style="text-align: left;">${userInput}</div><br><div style="text-align: right;">${result.airesponse}</div><br>`;
         staticLoader.style.display = "block";
     });
     </script>
