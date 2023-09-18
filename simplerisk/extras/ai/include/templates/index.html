@@ -45,8 +45,10 @@
         // Get user input
         let userInput = formData.get('prompt');
         // Append user input and AI response to the history
-        historyElement.innerHTML += `<div style="text-align: left;">${userInput}</div><br><div style="text-align: right;">${result.airesponse}</div><br>`;
+        historyElement.innerHTML += `<div style="text-align: left; background-color: RebeccaPurple;">${userInput}</div><br><div style="text-align: right;">${result.airesponse}</div><br>`;
         staticLoader.style.display = "block";
+        // Clear the input field
+        commandForm.elements['prompt'].value = '';
     });
     </script>
     

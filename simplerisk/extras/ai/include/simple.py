@@ -45,7 +45,9 @@ class SimpleBot():
     # Function to initialize agent
     def initialize_agent(self):
         # Define content for system message
-        content = "You are in charge of a database named simplerisk that contains an enterprise companies risk data. "
+        content = '''You are in charge of a database named simplerisk that contains an enterprise companies risk data.
+        questions about an asset should be directed to the assets table
+        '''
         
         # Define arguments for agent initialization
         agent_kwargs = {"extra_prompt_messages": [MessagesPlaceholder(variable_name="memory")], "system_message": SystemMessage(content=content)}
@@ -54,4 +56,4 @@ class SimpleBot():
         memory = ConversationBufferMemory(memory_key="memory", return_messages=True)
         
         # Initialize agent with tools, OpenAI chat model, agent type, verbosity, agent arguments, and memory
-        self.agent = initialize_agent(self.tools, llm=ChatOpenAI(temperature=0.5, model="gpt-3.5-turbo-16k-0613", verbose=True), agent=AgentType.OPENAI_FUNCTIONS, verbose=True, agent_kwargs=agent_kwargs, memory=memory)
+        self.agent = initialize_agent(self.tools, llm=ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613", verbose=True), agent=AgentType.OPENAI_FUNCTIONS, verbose=True, agent_kwargs=agent_kwargs, memory=memory)

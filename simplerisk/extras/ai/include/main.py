@@ -16,6 +16,7 @@ class WebApp:
         self.ui = FlaskUI(app=self.app, port=5000, server="flask", width=800, height=900, browser_path=self.browser_path) 
         # Initialize a SimpleBot instance
         self.bot = simple.SimpleBot()
+
         # Define the route for the index page
         self.app.route("/", methods=["GET", "POST"])(self.index)
         # Define the route for the api page
@@ -24,6 +25,7 @@ class WebApp:
     # Define the function to be called when the index page is accessed
     def index(self):
         # If the request method is POST
+        airesponse = "error"
         if request.method == "POST":
             # Get the prompt from the form data
             prompt =  request.form["prompt"]
@@ -38,6 +40,7 @@ class WebApp:
         return render_template("index.html")
     
     def api(self):
+        airesponse = "error"
         # If the request method is POST
         if request.method == "POST":
             # Get the prompt from the form data
